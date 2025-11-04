@@ -15,6 +15,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
@@ -32,11 +33,20 @@ public class ShooterController extends LinearOpMode {
     private Position cameraPosition = new Position(DistanceUnit.INCH,
             0, 2.831, 9, 0);
     private YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
-            0, -65, 0, 0);
+            0, -65, 180, 0);
 
     private AprilTagProcessor aprilTag;
 
     private VisionPortal visionPortal;
+    private Turret turret;
+    private Localizer localizer;
+    double myX = 0;
+    double myY = 0;
+    double myZ = 0;
+
+    double myPitch = 0;
+    double myRoll = 0;
+    double myYaw = 0;
 
     @Override
     public void runOpMode() {
@@ -48,7 +58,8 @@ public class ShooterController extends LinearOpMode {
 //        FtcDashboard.getInstance().startCameraStream(camera, 0);
 
         shooter = hardwareMap.get(DcMotorEx.class,"shooter");
-
+        turret = new Turret(hardwareMap);
+        localizer = new Localizer(hardwareMap);
         // Wait for the DS start button to be touched.
         telemetry.addData("DS preview on/off", "3 dots, Camera Stream");
         telemetry.addData(">", "Touch START to start OpMode");
@@ -62,32 +73,66 @@ public class ShooterController extends LinearOpMode {
             } else if (gamepad1.dpad_up) {
                 visionPortal.resumeStreaming();
             }
-            AprilTagDetection detection = null;
-            double myX = 0;
-            double myY = 0;
-            double myZ = 0;
 
-            double myPitch = 0;
-            double myRoll = 0;
-            double myYaw = 0;
 
-            if( !aprilTag.getDetections().isEmpty()) {
-                 detection = aprilTag.getDetections().get(0);
-                 myX = detection.robotPose.getPosition().x;
-                 myY = detection.robotPose.getPosition().y;
-                 myZ = detection.robotPose.getPosition().z;
-
-                 myPitch = detection.robotPose.getOrientation().getPitch(AngleUnit.DEGREES);
-                 myRoll = detection.robotPose.getOrientation().getRoll(AngleUnit.DEGREES);
-                 myYaw = detection.robotPose.getOrientation().getYaw(AngleUnit.DEGREES);
+            if(!aprilTag.getDetections().isEmpty()&&aprilTag.getDetections().get(0)!=null){
+                localizer.update(aprilTag.getDetections().get(0));
+            }
+            else{
+                localizer.update();
             }
 
+            Pose2D pose = localizer.getCurrentPose();
+
+             myX = pose.getX(DistanceUnit.INCH);
+             myY = pose.getY(DistanceUnit.INCH);
+             myYaw = pose.getHeading(AngleUnit.DEGREES);
 
 
 
-            double ballX = myX + .63;
-            double ballY = myY;
+
+//            AprilTagDetection detection = null;
+//
+//
+//            if( !aprilTag.getDetections().isEmpty()) {
+//                detection = aprilTag.getDetections().get(0);
+//                myX = detection.robotPose.getPosition().x;
+//                myY = detection.robotPose.getPosition().y;
+//                myZ = detection.robotPose.getPosition().z;
+//
+//                myPitch = detection.robotPose.getOrientation().getPitch(AngleUnit.DEGREES);
+//                myRoll = detection.robotPose.getOrientation().getRoll(AngleUnit.DEGREES);
+//                myYaw = detection.robotPose.getOrientation().getYaw(AngleUnit.DEGREES);
+//            }
+
+
+
+
+
+            double ballX = myX + Math.sin(Math.toRadians(myYaw))*2.5;
+            double ballY = myY + Math.cos(Math.toRadians(myYaw))*2.5;
             double ballZ = 12.8;
+
+            double goalX = -64;
+            double goalY = -66;
+
+            double xDiff = Math.abs(goalX-ballX);
+            double yDiff = Math.abs(goalY-ballY);
+
+            double wrappedYaw = (myYaw + 360) % 360;
+
+
+            double targetAngle = Math.toDegrees(Math.atan2( ballX-goalX,goalY - ballY));
+            targetAngle = (targetAngle + 360) % 360;
+
+            double turretAngle = wrappedYaw-targetAngle;
+
+//            turretAngle = ((turretAngle + 540) % 360) - 180;
+
+
+
+            turret.setTargetPosition(turretAngle);
+            turret.update();
 
 
 
@@ -119,13 +164,29 @@ public class ShooterController extends LinearOpMode {
             telemetryAprilTag();
 
             // Push telemetry to the Driver Station.
+            telemetry.addLine(String.format("camera XYH %6.1f %6.1f %6.1f  (inch)",
+                    myX,
+                    myY,
+                    myYaw));
+
+            telemetry.addLine(String.format("localizer XYH %6.1f %6.1f %6.1f  (inch)",
+                    myX,
+                    myY,
+                    myYaw));
+
+
             telemetry.addData("distance from goal: ",goalDistance);
             telemetry.addData("launch velocity: ",launchVelocity);
             telemetry.addData("rad per sec: ",radPerSec);
             telemetry.addData("motor rpm: ",motorRPM);
             telemetry.addData("ball z: ",ballZ);
+            telemetry.addData("target angle: ",targetAngle);
+            telemetry.addData("turret angle: ",turretAngle);
+            telemetry.addData("wrapped yaw: ",wrappedYaw);
+//            telemetry.addData("ball z: ",ballZ);
+//            telemetry.addData("ball z: ",ballZ);
             telemetry.update();
-            sleep(20);
+//            sleep(20);
 
         }
 
@@ -140,48 +201,49 @@ public class ShooterController extends LinearOpMode {
 
     private void initAprilTag() {
 
-            // Create the AprilTag processor.
-            aprilTag = new AprilTagProcessor.Builder()
-                    .setCameraPose(cameraPosition, cameraOrientation)
-                    .setLensIntrinsics(907.111,907.111,661.59,343.096)
-                    .build();
+        // Create the AprilTag processor.
+        aprilTag = new AprilTagProcessor.Builder()
+                .setCameraPose(cameraPosition, cameraOrientation)
+                .setLensIntrinsics(907.111,907.111,661.59,343.096)
+                .build();
 
 
-            VisionPortal.Builder builder = new VisionPortal.Builder();
-            builder.setCameraResolution(new Size(1280, 720));
-            builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
-            builder.addProcessor(aprilTag);
-            visionPortal = builder.build();
-        }
-
-        private void telemetryAprilTag() {
-
-            List<AprilTagDetection> currentDetections = aprilTag.getDetections();
-            telemetry.addData("# AprilTags Detected", currentDetections.size());
-
-            // Step through the list of detections and display info for each one.
-            for (AprilTagDetection detection : currentDetections) {
-                if (detection.metadata != null) {
-                    telemetry.addLine(String.format("\n==== (ID %d) %s", detection.id, detection.metadata.name));
-                    telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)",
-                            detection.robotPose.getPosition().x,
-                            detection.robotPose.getPosition().y,
-                            detection.robotPose.getPosition().z));
-                    telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)",
-                            detection.robotPose.getOrientation().getPitch(AngleUnit.DEGREES),
-                            detection.robotPose.getOrientation().getRoll(AngleUnit.DEGREES),
-                            detection.robotPose.getOrientation().getYaw(AngleUnit.DEGREES)));
-                } else {
-                    telemetry.addLine(String.format("\n==== (ID %d) Unknown", detection.id));
-                    telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detection.center.x, detection.center.y));
-                }
-            }   // end for() loop
-
-            // Add "key" information to telemetry
-            telemetry.addLine("\nkey:\nXYZ = X (Right), Y (Forward), Z (Up) dist.");
-            telemetry.addLine("PRY = Pitch, Roll & Yaw (XYZ Rotation)");
-
-        }   // end method telemetryAprilTag()
-
-
+        VisionPortal.Builder builder = new VisionPortal.Builder();
+        builder.setCameraResolution(new Size(1280, 720));
+        builder.setStreamFormat(VisionPortal.StreamFormat.MJPEG);
+        builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
+        builder.addProcessor(aprilTag);
+        visionPortal = builder.build();
     }
+
+    private void telemetryAprilTag() {
+
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        telemetry.addData("# AprilTags Detected", currentDetections.size());
+
+        // Step through the list of detections and display info for each one.
+        for (AprilTagDetection detection : currentDetections) {
+            if (detection.metadata != null) {
+                telemetry.addLine(String.format("\n==== (ID %d) %s", detection.id, detection.metadata.name));
+                telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)",
+                        detection.robotPose.getPosition().x,
+                        detection.robotPose.getPosition().y,
+                        detection.robotPose.getPosition().z));
+                telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)",
+                        detection.robotPose.getOrientation().getPitch(AngleUnit.DEGREES),
+                        detection.robotPose.getOrientation().getRoll(AngleUnit.DEGREES),
+                        detection.robotPose.getOrientation().getYaw(AngleUnit.DEGREES)));
+            } else {
+                telemetry.addLine(String.format("\n==== (ID %d) Unknown", detection.id));
+                telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detection.center.x, detection.center.y));
+            }
+        }   // end for() loop
+
+        // Add "key" information to telemetry
+        telemetry.addLine("\nkey:\nXYZ = X (Right), Y (Forward), Z (Up) dist.");
+        telemetry.addLine("PRY = Pitch, Roll & Yaw (XYZ Rotation)");
+
+    }   // end method telemetryAprilTag()
+
+
+}

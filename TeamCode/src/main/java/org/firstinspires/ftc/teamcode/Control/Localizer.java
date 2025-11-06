@@ -56,12 +56,8 @@ public class Localizer  {
 
     }
 
-    public void update(AprilTagDetection aprilTag){
-        double myX = aprilTag.robotPose.getPosition().x;
-        double myY = aprilTag.robotPose.getPosition().y;
-        double myYaw = aprilTag.robotPose.getOrientation().getYaw(AngleUnit.DEGREES);
-
-        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH,myX , myY, AngleUnit.DEGREES, myYaw));
+    public void update(Pose2D aprilTag){
+        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, aprilTag.getX(DistanceUnit.INCH) , aprilTag.getY(DistanceUnit.INCH), AngleUnit.DEGREES, aprilTag.getHeading(AngleUnit.DEGREES)));
         pinpoint.update();
         currentPose = pinpoint.getPosition();
     }
@@ -89,8 +85,7 @@ public class Localizer  {
         *  Forward of center is a positive number, backwards is a negative number.
         */
         pinpoint.setOffsets(-15, -165, DistanceUnit.MM); //these are tuned for 3110-0002-0001 Product Insight #1
-
-        /*
+            /*
          * Set the kind of pods used by your robot. If you're using goBILDA odometry pods, select either
          * the goBILDA_SWINGARM_POD, or the goBILDA_4_BAR_POD.
          * If you're using another kind of odometry pod, uncomment setEncoderResolution and input the

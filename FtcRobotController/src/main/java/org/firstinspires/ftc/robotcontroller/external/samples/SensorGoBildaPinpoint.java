@@ -75,22 +75,22 @@ public class SensorGoBildaPinpoint extends OpMode {
     }
 
     public void configurePinpoint(){
-       /*
-        *  Set the odometry pod positions relative to the point that you want the position to be measured from.
-        *
-        *  The X pod offset refers to how far sideways from the tracking point the X (forward) odometry pod is.
-        *  Left of the center is a positive number, right of center is a negative number.
-        *
-        *  The Y pod offset refers to how far forwards from the tracking point the Y (strafe) odometry pod is.
-        *  Forward of center is a positive number, backwards is a negative number.
-        */
-        pinpoint.setOffsets(-165, -15, DistanceUnit.MM); //these are tuned for 3110-0002-0001 Product Insight #1
+        /*
+         *  Set the odometry pod positions relative to the point that you want the position to be measured from.
+         *
+         *  The X pod offset refers to how far sideways from the tracking point the X (forward) odometry pod is.
+         *  Left of the center is a positive number, right of center is a negative number.
+         *
+         *  The Y pod offset refers to how far forwards from the tracking point the Y (strafe) odometry pod is.
+         *  Forward of center is a positive number, backwards is a negative number.
+         */
+        pinpoint.setOffsets(-15, -165, DistanceUnit.MM); //these are tuned for 3110-0002-0001 Product Insight #1
 
         /*
          * Set the kind of pods used by your robot. If you're using goBILDA odometry pods, select either
          * the goBILDA_SWINGARM_POD, or the goBILDA_4_BAR_POD.
          * If you're using another kind of odometry pod, uncomment setEncoderResolution and input the
-         * number of ticks per unit of your odometry pod.  For example: 
+         * number of ticks per unit of your odometry pod.  For example:
          *     pinpoint.setEncoderResolution(13.26291192, DistanceUnit.MM);
          */
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);

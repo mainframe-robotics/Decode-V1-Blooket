@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import com.acmerobotics.dashboard.config.Config;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.Range;
 
@@ -27,8 +28,10 @@ public class Turret{
 
     public Turret(HardwareMap hardwareMap) {
         this.hang = hardwareMap.get(DcMotor.class, "tu");
+
         controller = new PIDController(kP, kI, kD);
         hang.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//        hang.setDirection(DcMotorSimple.Direction.REVERSE);
 
     }
 

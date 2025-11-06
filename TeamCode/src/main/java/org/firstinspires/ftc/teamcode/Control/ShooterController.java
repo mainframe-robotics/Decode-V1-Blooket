@@ -4,6 +4,7 @@ import android.util.Size;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -50,7 +51,7 @@ public class ShooterController extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-//        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         initAprilTag();
 //        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -64,6 +65,7 @@ public class ShooterController extends LinearOpMode {
         telemetry.addData("DS preview on/off", "3 dots, Camera Stream");
         telemetry.addData(">", "Touch START to start OpMode");
         telemetry.update();
+        TelemetryPacket packet = new TelemetryPacket();
 
         waitForStart();
 
@@ -76,13 +78,25 @@ public class ShooterController extends LinearOpMode {
 
 
             if(!aprilTag.getDetections().isEmpty()&&aprilTag.getDetections().get(0)!=null){
-                localizer.update(aprilTag.getDetections().get(0));
+                AprilTagDetection aprilTagx  = aprilTag.getDetections().get(0);
+
+                double myX = aprilTagx.robotPose.getPosition().x;
+                double myY = aprilTagx.robotPose.getPosition().y;
+                double myYaw = aprilTagx.robotPose.getOrientation().getYaw(AngleUnit.DEGREES);
+
+
+
+
+
+                localizer.update(FieldConverter.aprilTagToPinpoint(
+                        new Pose2D(DistanceUnit.INCH, -myY , -myX, AngleUnit.DEGREES, myYaw)
+                ));
             }
             else{
                 localizer.update();
             }
 
-            Pose2D pose = localizer.getCurrentPose();
+            Pose2D pose = FieldConverter.pinpointToApriltags(localizer.getCurrentPose());
 
              myX = pose.getX(DistanceUnit.INCH);
              myY = pose.getY(DistanceUnit.INCH);
@@ -122,16 +136,16 @@ public class ShooterController extends LinearOpMode {
             double wrappedYaw = (myYaw + 360) % 360;
 
 
-            double targetAngle = Math.toDegrees(Math.atan2( ballX-goalX,goalY - ballY));
+            double targetAngle = Math.toDegrees(Math.atan2( ballX-goalX,goalY-ballY));
             targetAngle = (targetAngle + 360) % 360;
 
-            double turretAngle = wrappedYaw-targetAngle;
+            double turretAngle = targetAngle-wrappedYaw;
 
-//            turretAngle = ((turretAngle + 540) % 360) - 180;
+            turretAngle = ((turretAngle + 540) % 360) - 180;
 
 
 
-            turret.setTargetPosition(turretAngle);
+            turret.setTargetPosition(-turretAngle);
             turret.update();
 
 
@@ -163,16 +177,18 @@ public class ShooterController extends LinearOpMode {
 
             telemetryAprilTag();
 
-            // Push telemetry to the Driver Station.
-            telemetry.addLine(String.format("camera XYH %6.1f %6.1f %6.1f  (inch)",
-                    myX,
-                    myY,
-                    myYaw));
+//             Push telemetry to the Driver Station.
+            telemetry.addLine("camera XYH  (inch)"+
+                    localizer.getCurrentPose().toString());
 
             telemetry.addLine(String.format("localizer XYH %6.1f %6.1f %6.1f  (inch)",
                     myX,
                     myY,
                     myYaw));
+
+            double radi = 8;
+            packet.fieldOverlay().strokeCircle(myX,myY,radi).setStroke("red");
+            packet.fieldOverlay().strokeLine(myX*Math.sin(Math.toRadians(myYaw)),myY*Math.cos(Math.toRadians(myYaw)),(myX-2)*Math.sin(Math.toRadians(myYaw)),(myY-2)*Math.cos(Math.toRadians(myYaw)));
 
 
             telemetry.addData("distance from goal: ",goalDistance);

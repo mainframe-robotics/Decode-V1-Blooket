@@ -11,8 +11,8 @@ import com.qualcomm.robotcore.util.Range;
 
 @Config
 public class Turret{
-    public static double kP = .12, kI = 0, kD = 0.003;
-    public static double kF=0.086;
+    public static double kP = .09, kI = 0, kD = 0.00;
+    public static double kF=0;
     public static double lowerBound = -120, upperBound = 100;
     private PIDController controller;
     public static double hangTarget = 0;
@@ -47,7 +47,9 @@ public class Turret{
         hangTarget=Range.clip(hangTarget, lowerBound, upperBound);
         controller.setPID(kP,kI,kD);
 
-        return controller.calculate(hangCurrent, hangTarget);
+//        return controller.calculate(hangCurrent, hangTarget);
+        return kP*Math.signum(hangTarget-hangCurrent)*Math.sqrt(Math.abs(hangTarget-hangCurrent));
+
     }
 
     public double getFF(){

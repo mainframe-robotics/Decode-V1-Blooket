@@ -27,17 +27,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode.Control;
+package org.firstinspires.ftc.teamcode.TeleOp;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
+
+import org.firstinspires.ftc.teamcode.Control.Shooter;
+import org.firstinspires.ftc.teamcode.Control.Turret;
 
 
 /*
@@ -52,17 +52,20 @@ import com.qualcomm.robotcore.util.Range;
  * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
  */
-
+@Config
 @TeleOp(name="Basic: Linear OpMode", group="Linear OpMode")
 public class teleop extends LinearOpMode {
     private Turret turret;
+    private Shooter shooter;
     // Declare OpMode members.
+    public static double rpm=0;
     private ElapsedTime runtime = new ElapsedTime();
 
     @Override
     public void runOpMode() {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         turret=new Turret(hardwareMap);
+        shooter=new Shooter(hardwareMap);
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
@@ -82,12 +85,19 @@ public class teleop extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
+//            turret.setTargetPosition(angle);
+            shooter.setTargetRPM(rpm);
+            shooter.update();
+
+
             turret.update();
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("turret current position: ",turret.getCurrentPosition());
             telemetry.addData("turret target position: ",turret.getTargetPosition());
+            telemetry.addData("shooter current velo: ",shooter.getCurrentRPM());
+            telemetry.addData("shooter target velo: ",shooter.getTargetRPM());
             telemetry.update();
         }
     }

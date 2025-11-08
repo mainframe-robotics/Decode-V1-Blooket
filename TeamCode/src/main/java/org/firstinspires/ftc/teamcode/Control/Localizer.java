@@ -44,8 +44,8 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
  */
 public class Localizer  {
     // Create an instance of the sensor
-    GoBildaPinpointDriver pinpoint;
-    private Pose2D currentPose;
+    public static GoBildaPinpointDriver pinpoint;
+    public static Pose2D currentPose;
 
 
     public Localizer(HardwareMap hardwareMap){
@@ -56,25 +56,25 @@ public class Localizer  {
 
     }
 
-    public void update(Pose2D aprilTag){
+    public static void update(Pose2D aprilTag){
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, aprilTag.getX(DistanceUnit.INCH) , aprilTag.getY(DistanceUnit.INCH), AngleUnit.DEGREES, aprilTag.getHeading(AngleUnit.DEGREES)));
         pinpoint.update();
         currentPose = pinpoint.getPosition();
     }
 
-    public void update(){
+    public static void update(){
         pinpoint.update();
         currentPose = pinpoint.getPosition();
     }
 
-    public Pose2D getCurrentPose(){
+    public static Pose2D getCurrentPose(){
         return currentPose;
     }
 
 
 
 
-    public void configurePinpoint(){
+    public static void configurePinpoint(){
        /*
         *  Set the odometry pod positions relative to the point that you want the position to be measured from.
         *

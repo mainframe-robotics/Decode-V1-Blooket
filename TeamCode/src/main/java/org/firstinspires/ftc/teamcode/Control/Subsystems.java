@@ -11,6 +11,10 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+
 public class Subsystems {
     private DcMotor intake, turret;
     private CRServo servo1,servo2;
@@ -21,7 +25,7 @@ public class Subsystems {
     private DcMotorEx shooter;
 
     double kickerDown = .175;//kicker positions
-    double kickerUp = .458                                             ;
+    double kickerUp = .465;
 
     int ballCount = -1;
     public int shootingState = -1;
@@ -36,10 +40,10 @@ public class Subsystems {
 
 
     boolean lastBState = false;
-    public Subsystems(HardwareMap hardwareMap,Gamepad gamepad1) {
+    public Subsystems(HardwareMap hardwareMap,boolean isBlue) {
         intake = hardwareMap.get(DcMotor.class,"int");
 //        turret = hardwareMap.dcMotor.get("tur");
-        controller=new ShooterController(hardwareMap);
+        controller=new ShooterController(hardwareMap,isBlue);
         shooter=hardwareMap.get(DcMotorEx.class,"shooter");
 
         servo1 = hardwareMap.crservo.get("rs");
@@ -80,6 +84,16 @@ public class Subsystems {
     }
     public boolean isReadyToShoot(){
         return controller.readyToShoot();
+    }
+
+    public Pose2D getCamerPoseRaw(){
+        return controller.getCameraPoseRaw();
+    }
+    public Pose2D getCameraPoseWrapped(){
+        return controller.getCameraPoseWrapped();
+    }
+    public Pose2D getLocalizerPose() {
+        return controller.getLocalizerPose();
     }
 
     public double ballCount(){
@@ -168,14 +182,14 @@ public class Subsystems {
                 if(controller.getShooterVelocityRaw()/controller.getShooterVelocity()<(2300.0/2700)){
                     ballCount=0;
                     shootingState=7;
-                    rollers(1,0);
+                    rollers(0,0);
                     shootingState = -1;
                 }
                 break;
             case 7:
                 controller.update(false);
                 if (ballCount==0){
-                    rollers(1,0);
+                    rollers(0,0);
                     shootingState=-1;
                 }
                 break;

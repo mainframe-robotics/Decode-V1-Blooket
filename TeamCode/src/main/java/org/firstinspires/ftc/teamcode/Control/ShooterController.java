@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.Control;
 import android.util.Size;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
@@ -29,7 +30,10 @@ import org.openftc.easyopencv.OpenCvWebcam;
 
 import java.util.List;
 
+@Config
 public class ShooterController {
+
+    public static double goalX=-64.5 , goalY=-66;
     private Shooter shooter;
     private Position cameraPosition = new Position(DistanceUnit.INCH,
             0, 2.831, 9, 0);
@@ -43,20 +47,24 @@ public class ShooterController {
     private Localizer localizer;
     double myX = 0;
     double myY = 0;
+    double myYaw = 0;
+    double myXc = 0;
+    double myYc = 0;
+    double myYawc = 0;
+
     double turretAngle =0;
     double shooterVelocity =0;
 
     double veloMult = 2.73;
 
 
-    double myYaw = 0;
 
-    public ShooterController(HardwareMap hardwareMap){
+    public ShooterController(HardwareMap hardwareMap,boolean isBlue){
         initAprilTag(hardwareMap);
 //        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
 //        OpenCvWebcam camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
 //        FtcDashboard.getInstance().startCameraStream(camera, 0);
-
+        goalY = isBlue? goalY:-goalY;
         shooter = new Shooter(hardwareMap);
         turret = new Turret(hardwareMap);
         localizer = new Localizer(hardwareMap);
@@ -89,6 +97,10 @@ public class ShooterController {
             double myX = aprilTagx.robotPose.getPosition().x;
             double myY = aprilTagx.robotPose.getPosition().y;
             double myYaw = aprilTagx.robotPose.getOrientation().getYaw(AngleUnit.DEGREES);
+
+             myXc = aprilTagx.robotPose.getPosition().x;
+             myYc = aprilTagx.robotPose.getPosition().y;
+             myYawc = aprilTagx.robotPose.getOrientation().getYaw(AngleUnit.DEGREES);
 
 
 
@@ -133,8 +145,6 @@ public class ShooterController {
         double ballY = myY + Math.cos(Math.toRadians(myYaw))*2.5;
         double ballZ = 12.8;
 
-        double goalX = -64.5;
-        double goalY = -66;
 
         double xDiff = Math.abs(goalX-ballX);
         double yDiff = Math.abs(goalY-ballY);
@@ -158,7 +168,7 @@ public class ShooterController {
 
         double launchAngle = 65;
 
-        double goalDistance = d2d(-64,-66,myX,myY);
+        double goalDistance = d2d(goalX,goalY,myX,myY);
         double goalHeight = 43;
 
         double g = 9.81;
@@ -183,7 +193,16 @@ public class ShooterController {
         shooter.update();
 
     }
+    public Pose2D getCameraPoseRaw(){
+        return new Pose2D(DistanceUnit.INCH,myXc,myYc,AngleUnit.DEGREES,myYawc);
+    }
 
+    public Pose2D getCameraPoseWrapped(){
+        return new Pose2D(DistanceUnit.INCH,myX,myY,AngleUnit.DEGREES,myYaw);
+    }
+    public Pose2D getLocalizerPose(){
+        return localizer.getCurrentPose();
+    }
 
 
 

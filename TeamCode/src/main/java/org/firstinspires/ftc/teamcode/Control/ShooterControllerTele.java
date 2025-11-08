@@ -134,7 +134,7 @@ public class ShooterControllerTele extends LinearOpMode {
             double ballZ = 12.8;
 
             double goalX = -64;
-            double goalY = -66;
+            double goalY = 66;
 
             double xDiff = Math.abs(goalX-ballX);
             double yDiff = Math.abs(goalY-ballY);
